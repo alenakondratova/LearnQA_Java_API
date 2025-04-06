@@ -1,5 +1,6 @@
 package tests;
 
+import io.qameta.allure.*;
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -16,6 +17,7 @@ public class UserEditTest extends BaseTestCase {
     private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
 
     @Test
+    @Story("RP-1122 - Edit just created user")
     public void testEditJustCreatedTest() {
        // GENERATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
@@ -23,7 +25,7 @@ public class UserEditTest extends BaseTestCase {
         JsonPath responseCreateAuth = RestAssured
                 .given()
                 .body(userData)
-                .post("https://playground.learnqa.ru/api/user")
+                .post("https://playground.learnqa.ru/api_dev/user")
                 .jsonPath();
 
         String userId = responseCreateAuth.getString("id");
@@ -36,7 +38,7 @@ public class UserEditTest extends BaseTestCase {
         Response responseGetAuth = RestAssured
                 .given()
                 .body(authData)
-                .post("https://playground.learnqa.ru/api/user/login")
+                .post("https://playground.learnqa.ru/api_dev/user/login")
                 .andReturn();
 
         //EDIT
@@ -49,7 +51,7 @@ public class UserEditTest extends BaseTestCase {
                 .header("x-csrf-token", this.getHeader(responseGetAuth, "x-csrf-token"))
                 .cookie("auth_sid", this.getCookie(responseGetAuth, "auth_sid"))
                 .body(editData)
-                .put("https://playground.learnqa.ru/api/user/" + userId)
+                .put("https://playground.learnqa.ru/api_dev/user/" + userId)
                 .andReturn();
 
         //GET
@@ -57,26 +59,27 @@ public class UserEditTest extends BaseTestCase {
                 .given()
                 .header("x-csrf-token", this.getHeader(responseGetAuth, "x-csrf-token"))
                 .cookie("auth_sid", this.getCookie(responseGetAuth, "auth_sid"))
-                .get("https://playground.learnqa.ru/api/user/" + userId)
+                .get("https://playground.learnqa.ru/api_dev/user/" + userId)
                 .andReturn();
 
         Assertions.assertJsonByName(responseUserData, "firstName", newName);
     }
 
     @Test
+    @Severity(SeverityLevel.CRITICAL)
     public void testEditUserWithoutAuth() {
         Map<String, String> userData = DataGenerator.getRegistrationData();
         JsonPath responseCreate = RestAssured
                 .given()
                 .body(userData)
-                .post("https://playground.learnqa.ru/api/user")
+                .post("https://playground.learnqa.ru/api_dev/user")
                 .jsonPath();
         String userId = responseCreate.getString("id");
 
         Map<String, String> editData = Map.of("firstName", "Unauthorized");
 
         Response responseEdit = apiCoreRequests.makePutRequestWithoutAuth(
-                "https://playground.learnqa.ru/api/user/" + userId,
+                "https://playground.learnqa.ru/api_dev/user/" + userId,
                 editData
         );
 
@@ -85,19 +88,20 @@ public class UserEditTest extends BaseTestCase {
     }
 
     @Test
+    @Feature("User Menu")
     public void testEditAnotherUserData() {
         Map<String, String> user1Data = DataGenerator.getRegistrationData();
         String userId1 = RestAssured
                 .given()
                 .body(user1Data)
-                .post("https://playground.learnqa.ru/api/user")
+                .post("https://playground.learnqa.ru/api_dev/user")
                 .jsonPath().getString("id");
 
         Map<String, String> user2Data = DataGenerator.getRegistrationData();
         RestAssured
                 .given()
                 .body(user2Data)
-                .post("https://playground.learnqa.ru/api/user")
+                .post("https://playground.learnqa.ru/api_dev/user")
                 .jsonPath();
 
         Response loginAsUser2 = apiCoreRequests.login(user2Data.get("email"), user2Data.get("password"));
@@ -105,7 +109,7 @@ public class UserEditTest extends BaseTestCase {
         Map<String, String> editData = Map.of("firstName", "Hacker");
 
         Response responseEdit = apiCoreRequests.makePutRequest(
-                "https://playground.learnqa.ru/api/user/" + userId1,
+                "https://playground.learnqa.ru/api_dev/user/" + userId1,
                 this.getHeader(loginAsUser2, "x-csrf-token"),
                 this.getCookie(loginAsUser2, "auth_sid"),
                 editData
@@ -115,12 +119,13 @@ public class UserEditTest extends BaseTestCase {
     }
 
     @Test
+    @Owner("Vasya Pupkin")
     public void testEditEmailToInvalidFormat() {
         Map<String, String> userData = DataGenerator.getRegistrationData();
         JsonPath responseCreate = RestAssured
                 .given()
                 .body(userData)
-                .post("https://playground.learnqa.ru/api/user")
+                .post("https://playground.learnqa.ru/api_dev/user")
                 .jsonPath();
 
         String userId = responseCreate.getString("id");
@@ -130,7 +135,7 @@ public class UserEditTest extends BaseTestCase {
         Map<String, String> editData = Map.of("email", "invalidemail.com");
 
         Response responseEdit = apiCoreRequests.makePutRequest(
-                "https://playground.learnqa.ru/api/user/" + userId,
+                "https://playground.learnqa.ru/api_dev/user/" + userId,
                 this.getHeader(login, "x-csrf-token"),
                 this.getCookie(login, "auth_sid"),
                 editData
@@ -141,12 +146,13 @@ public class UserEditTest extends BaseTestCase {
     }
 
     @Test
+    @TmsLink("RP-TC-230505")
     public void testEditFirstNameToShortValue() {
         Map<String, String> userData = DataGenerator.getRegistrationData();
         JsonPath responseCreate = RestAssured
                 .given()
                 .body(userData)
-                .post("https://playground.learnqa.ru/api/user")
+                .post("https://playground.learnqa.ru/api_dev/user")
                 .jsonPath();
 
         String userId = responseCreate.getString("id");
@@ -156,7 +162,7 @@ public class UserEditTest extends BaseTestCase {
         Map<String, String> editData = Map.of("firstName", "A");
 
         Response responseEdit = apiCoreRequests.makePutRequest(
-                "https://playground.learnqa.ru/api/user/" + userId,
+                "https://playground.learnqa.ru/api_dev/user/" + userId,
                 this.getHeader(login, "x-csrf-token"),
                 this.getCookie(login, "auth_sid"),
                 editData
