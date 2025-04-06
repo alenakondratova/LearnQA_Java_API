@@ -2,6 +2,7 @@ package lib;
 
 import io.qameta.allure.Step;
 import io.qameta.allure.restassured.AllureRestAssured;
+import io.restassured.RestAssured;
 import io.restassured.http.Header;
 import io.restassured.response.Response;
 
@@ -46,6 +47,29 @@ public class ApiCoreRequests {
                 .filter(new AllureRestAssured())
                 .body(authData)
                 .post(url)
+                .andReturn();
+    }
+    @Step("Authorization with email")
+    public Response login(String email, String password) {
+        Map<String, String> authData = Map.of(
+                "email", email,
+                "password", password
+        );
+
+        return RestAssured
+                .given()
+                .body(authData)
+                .post("https://playground.learnqa.ru/api/user/login")
+                .andReturn();
+    }
+
+    @Step("Get UserData with ID {userId}")
+    public Response getUserData(String csrfToken, String authSid, int userId) {
+        return RestAssured
+                .given()
+                .header("x-csrf-token", csrfToken)
+                .cookie("auth_sid", authSid)
+                .get("https://playground.learnqa.ru/api/user/" + userId)
                 .andReturn();
     }
 }
